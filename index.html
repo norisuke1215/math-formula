@@ -82,15 +82,33 @@
                     </div>
                 </div>
 
-                <!-- Answer Input Form -->
+<!-- Answer Input Form -->
                 <div class="pt-2 border-t border-slate-100 space-y-3">
                     <label class="block text-sm font-medium text-slate-700">あなたの解答</label>
+                    
+                    <!-- ① 数式入力補助ボタンを追加 -->
+                    <div class="flex flex-wrap gap-1 mb-2">
+                        <button type="button" onclick="insertAnswerSymbol('\\int_{a}^{b}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">∫</button>
+                        <button type="button" onclick="insertAnswerSymbol('\\sum_{k=1}^{n}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">∑</button>
+                        <button type="button" onclick="insertAnswerSymbol('\\sqrt{}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">√</button>
+                        <button type="button" onclick="insertAnswerSymbol('\\pi')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">π</button>
+                        <button type="button" onclick="insertAnswerSymbol('\\theta')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">θ</button>
+                        <button type="button" onclick="insertAnswerSymbol('\\infty')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">∞</button>
+                        <button type="button" onclick="insertAnswerSymbol('^2')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">x²</button>
+                        <button type="button" onclick="insertAnswerSymbol('^3')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">x³</button>
+                        <button type="button" onclick="insertAnswerSymbol('\\frac{a}{b}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">½</button>
+                    </div>
+
                     <div class="flex gap-2">
-                        <input type="text" id="user-answer" placeholder="答えを入力 (例: 1)" class="flex-grow px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg">
-                        <button id="btn-submit" onclick="checkAnswer()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition duration-200 shadow-sm flex items-center gap-1">
+                        <!-- ② oninput 属性を追加 -->
+                        <input type="text" id="user-answer" placeholder="答えを入力 (例: \int_0^1 x dx)" oninput="updateAnswerPreview()" class="flex-grow px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg">
+                        <button id="btn-submit" onclick="checkAnswer()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition duration-200 shadow-sm flex items-center gap-1 shrink-0">
                             <span>回答する</span>
                         </button>
                     </div>
+
+                    <!-- ③ リアルタイムプレビュー表示エリアを追加 -->
+                    <div id="user-answer-preview" class="hidden p-3 bg-slate-50 border-l-4 border-blue-500 rounded-r-xl text-slate-800 text-lg min-h-[50px]"></div>
                 </div>
 
                 <!-- Feedback & Explanation Box -->
@@ -605,6 +623,41 @@
                 draw(touch);
             }
         }
+        
+// 解答欄用の数式記号挿入関数
+function insertAnswerSymbol(symbol) {
+    const input = document.getElementById('user-answer');
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = input.value;
+
+    input.value = text.substring(0, start) + symbol + text.substring(end);
+    input.focus();
+    input.selectionStart = input.selectionEnd = start + symbol.length;
+
+    // プレビューを更新
+    updateAnswerPreview();
+}
+
+// 解答欄のリアルタイム数式プレビュー更新関数
+function updateAnswerPreview() {
+    const input = document.getElementById('user-answer').value;
+    const preview = document.getElementById('user-answer-preview');
+    
+    if (!input.trim()) {
+        preview.classList.add('hidden');
+        preview.innerHTML = '';
+        return;
+    }
+
+    preview.classList.remove('hidden');
+    preview.innerHTML = '<span class="text-xs text-slate-400 block mb-1">数式プレビュー:</span>\\(' + input + '\\)';
+
+    // MathJaxで数式を描画
+    if (window.MathJax) {
+        MathJax.typesetPromise([preview]);
+    }
+}
     </script>
 </body>
 </html>
