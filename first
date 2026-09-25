@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数学問題演習アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- MathJax for rendering math equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        /* Custom styles for canvas and touch interactions */
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        input, textarea {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        .tab-btn.active {
+            color: #3b82f6;
+            border-top: 3px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col justify-between pb-20">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-blue-600 text-white p-2 rounded-lg font-bold text-lg">
+                    $\sum$
+                </div>
+                <h1 class="text-xl font-bold text-slate-800">数学演習 Master</h1>
+            </div>
+            <span class="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-medium" id="header-stats">問題数: 0</span>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto w-full px-4 py-6 flex-grow">
+
+        <!-- TAB 1: PRACTICE SECTION -->
+        <section id="tab-practice" class="tab-content block space-y-6">
+            <!-- Progress Bar Card -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-semibold text-slate-500 uppercase">学習進捗</span>
+                    <span id="practice-counter" class="text-xs font-bold text-blue-600">問題 1 / 1</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                    <div id="practice-progress" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="flex items-center justify-between border-b pb-3 border-slate-100">
+                    <span id="problem-category" class="bg-indigo-50 text-indigo-600 text-xs px-3 py-1 rounded-md font-semibold">積分法</span>
+                    <span id="problem-id-display" class="text-xs text-slate-400">ID: #1</span>
+                </div>
+
+                <div class="py-2">
+                    <h2 class="text-sm text-slate-400 font-medium mb-1">【問題】</h2>
+                    <div id="problem-statement" class="text-lg md:text-xl text-slate-800 font-medium leading-relaxed min-h-[60px] flex items-center">
+                        $\int_{0}^{1} 2x \, dx$ を計算せよ。
+                    </div>
+                </div>
+
+                <!-- Answer Input Form -->
+                <div class="pt-2 border-t border-slate-100 space-y-3">
+                    <label class="block text-sm font-medium text-slate-700">あなたの解答</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="user-answer" placeholder="答えを入力 (例: 1)" class="flex-grow px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg">
+                        <button id="btn-submit" onclick="checkAnswer()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition duration-200 shadow-sm flex items-center gap-1">
+                            <span>回答する</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback & Explanation Box -->
+                <div id="explanation-box" class="hidden p-5 rounded-xl border transition-all duration-300 space-y-3">
+                    <div id="feedback-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold"></div>
+                    <div>
+                        <h3 class="text-xs font-bold uppercase text-slate-500 mb-1">【解説】</h3>
+                        <div id="problem-explanation" class="text-slate-700 text-base leading-relaxed"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="prevProblem()" class="px-5 py-2.5 bg-white border border-slate-300 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-chevron-left text-xs"></i> 前の問題
+                </button>
+                <button onclick="nextProblem()" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
+                    次の問題 <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- TAB 2: MANAGEMENT SECTION -->
+        <section id="tab-manage" class="tab-content hidden space-y-6">
+            <!-- Add / Edit Problem Form -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                <div class="flex justify-between items-center">
+                    <h2 id="form-title" class="text-lg font-bold text-slate-800">新しい問題の追加</h2>
+                    <button id="btn-cancel-edit" onclick="resetForm()" class="hidden text-xs text-rose-500 hover:underline">編集をキャンセル</button>
+                </div>
+
+                <form id="problem-form" onsubmit="saveProblem(event)" class="space-y-4">
+                    <input type="hidden" id="edit-problem-id" value="">
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">カテゴリー / 単元</label>
+                        <input type="text" id="input-category" required placeholder="例: 微分・積分、二次関数" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                    </div>
+
+                    <!-- Problem Statement Input with Math Shortcuts -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-semibold text-slate-600">問題文 (TeX数式は $ で囲む)</label>
+                        </div>
+                        
+                        <!-- Math Symbol Helper Toolbar -->
+                        <div class="flex flex-wrap gap-1 p-2 bg-slate-50 border border-slate-200 rounded-t-lg text-sm">
+                            <span class="text-xs text-slate-400 self-center mr-1">数式記号:</span>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\int_{a}^{b} f(x)dx$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\int$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\sum_{k=1}^{n}$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\sum$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\sqrt{x}$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\sqrt{}$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\pi$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\pi$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\theta$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\theta$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\infty$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\infty$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', 'x^2')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$x^2$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', 'x^3')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$x^3$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\le$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\le$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\ge$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\ge$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\neq$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\neq$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '$\\rightarrow$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\rightarrow$</button>
+                            <button type="button" onclick="insertSymbol('input-statement', '\\frac{a}{b}')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\frac{a}{b}$</button>
+                        </div>
+
+                        <textarea id="input-statement" required rows="3" placeholder="問題文を入力してください。例: $\int_{0}^{1} x^2 \, dx$ の値を求めよ。" class="w-full px-3 py-2 rounded-b-lg border border-slate-300 border-t-0 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"></textarea>
+                    </div>
+
+                    <!-- Answer Input -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">正解 (半角推奨)</label>
+                        <input type="text" id="input-answer" required placeholder="例: 1/3" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                    </div>
+
+                    <!-- Explanation Input -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">解説</label>
+                        <textarea id="input-explanation" required rows="3" placeholder="解法の手順やポイントを入力してください。" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"></textarea>
+                    </div>
+
+                    <button type="submit" id="btn-save" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition duration-200 shadow-sm text-sm">
+                        問題を登録保存する
+                    </button>
+                </form>
+            </div>
+
+            <!-- Existing Problems List -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-lg font-bold text-slate-800">問題一覧</h2>
+                <div id="problems-list" class="divide-y divide-slate-100">
+                    <!-- Dynamic problem items go here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: BOARD / CANVAS MEMO SECTION -->
+        <section id="tab-board" class="tab-content hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3 border-slate-100">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-ruler text-blue-600"></i> 計算用紙・板書メモ
+                    </h2>
+                    
+                    <!-- Canvas Controls -->
+                    <div class="flex items-center gap-2">
+                        <!-- Color Selector -->
+                        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                            <button onclick="setPenColor('#1e293b')" class="w-6 h-6 rounded-full bg-slate-800 border-2 border-white focus:ring-2 focus:ring-blue-400" title="黒"></button>
+                            <button onclick="setPenColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border-2 border-white focus:ring-2 focus:ring-blue-400" title="赤"></button>
+                            <button onclick="setPenColor('#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white focus:ring-2 focus:ring-blue-400" title="青"></button>
+                        </div>
+                        
+                        <!-- Tool Mode Toggle -->
+                        <button id="btn-eraser" onclick="toggleEraser()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition">
+                            <i class="fa-solid fa-eraser"></i> 消しゴム
+                        </button>
+
+                        <!-- Clear Canvas Button -->
+                        <button onclick="clearCanvas()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition">
+                            <i class="fa-solid fa-trash-can"></i> 全消去
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Blackboard Area -->
+                <div class="relative w-full aspect-[4/3] sm:aspect-[16/9] bg-slate-900 rounded-xl overflow-hidden shadow-inner border border-slate-800">
+                    <canvas id="board-canvas" class="w-full h-full cursor-crosshair"></canvas>
+                </div>
+                <p class="text-xs text-slate-400 text-center">※画面をタッチまたはマウスでドラッグして計算用メモとして自由にご利用いただけます。</p>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40">
+        <div class="max-w-md mx-auto flex justify-around">
+            <button onclick="switchTab('practice')" id="tab-btn-practice" class="tab-btn active flex-1 py-3 flex flex-col items-center gap-1 text-slate-500 transition">
+                <i class="fa-solid fa-graduation-cap text-lg"></i>
+                <span class="text-xs font-medium">問題演習</span>
+            </button>
+            <button onclick="switchTab('manage')" id="tab-btn-manage" class="tab-btn flex-1 py-3 flex flex-col items-center gap-1 text-slate-500 transition">
+                <i class="fa-solid fa-list-check text-lg"></i>
+                <span class="text-xs font-medium">問題管理</span>
+            </button>
+            <button onclick="switchTab('board')" id="tab-btn-board" class="tab-btn flex-1 py-3 flex flex-col items-center gap-1 text-slate-500 transition">
+                <i class="fa-solid fa-chalkboard text-lg"></i>
+                <span class="text-xs font-medium">板書メモ</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // Default Sample Problems
+        const defaultProblems = [
+            {
+                id: "1",
+                category: "微分・積分",
+                statement: "定積分 $\\int_{0}^{1} 2x \\, dx$ の値を求めよ。",
+                answer: "1",
+                explanation: "原始関数は $x^2$ です。$[x^2]_0^1 = 1^2 - 0^2 = 1$ となります。"
+            },
+            {
+                id: "2",
+                category: "三角関数",
+                statement: "$\\sin(\\frac{\\pi}{6})$ の値を求めよ。",
+                answer: "1/2",
+                explanation: "$\\frac{\\pi}{6} = 30^\\circ$ です。$\\sin 30^\\circ = \\frac{1}{2}$ となります。"
+            },
+            {
+                id: "3",
+                category: "数列",
+                statement: "初項 2、公差 3 の等差数列の第 5 項 $a_5$ を求めよ。",
+                answer: "14",
+                explanation: "等差数列の一般項は $a_n = a_1 + (n-1)d$ です。$a_5 = 2 + (5-1) \\times 3 = 2 + 12 = 14$ となります。"
+            }
+        ];
+
+        // State variables
+        let problems = [];
+        let currentProblemIndex = 0;
+        let isEraser = false;
+        let currentColor = '#ffffff'; // White for dark chalkboard background
+        let isDrawing = false;
+        let canvas, ctx;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadProblems();
+            renderPracticeProblem();
+            renderProblemsList();
+            initCanvas();
+        });
+
+        // LocalStorage Management
+        function loadProblems() {
+            const saved = localStorage.getItem('math_app_problems');
+            if (saved) {
+                try {
+                    problems = JSON.parse(saved);
+                } catch (e) {
+                    problems = [...defaultProblems];
+                }
+            } else {
+                problems = [...defaultProblems];
+                saveToLocalStorage();
+            }
+            updateHeaderStats();
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('math_app_problems', JSON.stringify(problems));
+            updateHeaderStats();
+        }
+
+        function updateHeaderStats() {
+            document.getElementById('header-stats').innerText = `問題数: ${problems.length}`;
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
+
+            if (tabName === 'board') {
+                setTimeout(resizeCanvas, 50); // Ensure correct canvas sizing when tab shown
+            }
+        }
+
+        function renderPracticeProblem() {
+            const expBox = document.getElementById('explanation-box');
+            expBox.classList.add('hidden');
+            document.getElementById('user-answer').value = '';
+
+            if (problems.length === 0) {
+                document.getElementById('problem-category').innerText = '未登録';
+                document.getElementById('problem-id-display').innerText = '';
+                document.getElementById('problem-statement').innerHTML = '問題が登録されていません。「問題管理」タブから追加してください。';
+                document.getElementById('practice-counter').innerText = '0 / 0';
+                document.getElementById('practice-progress').style.width = '0%';
+                return;
+            }
+
+            if (currentProblemIndex >= problems.length) {
+                currentProblemIndex = 0;
+            }
+
+            const current = problems[currentProblemIndex];
+            document.getElementById('problem-category').innerText = current.category || '全般';
+            document.getElementById('problem-id-display').innerText = `ID: #${current.id}`;
+            document.getElementById('problem-statement').innerHTML = current.statement;
+            document.getElementById('problem-explanation').innerHTML = current.explanation;
+
+            document.getElementById('practice-counter').innerText = `問題 ${currentProblemIndex + 1} / ${problems.length}`;
+            const progress = ((currentProblemIndex + 1) / problems.length) * 100;
+            document.getElementById('practice-progress').style.width = `${progress}%`;
+
+            // Trigger MathJax render
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function checkAnswer() {
+            if (problems.length === 0) return;
+
+            const userAns = document.getElementById('user-answer').value.trim();
+            const current = problems[currentProblemIndex];
+            const expBox = document.getElementById('explanation-box');
+            const badge = document.getElementById('feedback-badge');
+
+            if (!userAns) return;
+
+            expBox.classList.remove('hidden');
+
+            if (userAns.toLowerCase() === current.answer.trim().toLowerCase()) {
+                badge.className = "inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold bg-emerald-100 text-emerald-700 border border-emerald-300";
+                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> 正解！ Excellent!';
+                expBox.className = "p-5 rounded-xl border bg-emerald-50/50 border-emerald-200 space-y-3";
+            } else {
+                badge.className = "inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold bg-rose-100 text-rose-700 border border-rose-300";
+                badge.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> 不正解 (正解: ${current.answer})`;
+                expBox.className = "p-5 rounded-xl border bg-rose-50/50 border-rose-200 space-y-3";
+            }
+
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function nextProblem() {
+            if (problems.length === 0) return;
+            currentProblemIndex = (currentProblemIndex + 1) % problems.length;
+            renderPracticeProblem();
+        }
+
+        function prevProblem() {
+            if (problems.length === 0) return;
+            currentProblemIndex = (currentProblemIndex - 1 + problems.length) % problems.length;
+            renderPracticeProblem();
+        }
+
+        function renderProblemsList() {
+            const listEl = document.getElementById('problems-list');
+            listEl.innerHTML = '';
+
+            if (problems.length === 0) {
+                listEl.innerHTML = '<p class="text-sm text-slate-400 py-4 text-center">登録された問題はありません。</p>';
+                return;
+            }
+
+            problems.forEach((p, index) => {
+                const item = document.createElement('div');
+                item.className = "py-3 flex items-start justify-between gap-4";
+                item.innerHTML = `
+                    <div class="space-y-1 flex-grow">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">#${index + 1}</span>
+                            <span class="text-xs text-blue-600 font-semibold">${p.category}</span>
+                        </div>
+                        <div class="text-sm text-slate-800 font-medium">${p.statement}</div>
+                        <div class="text-xs text-slate-500">正解: <span class="font-mono bg-slate-50 px-1 py-0.5 rounded border border-slate-200">${p.answer}</span></div>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button onclick="editProblem('${p.id}')" class="p-2 text-slate-400 hover:text-blue-600 transition"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteProblem('${p.id}')" class="p-2 text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function insertSymbol(elementId, symbol) {
+            const input = document.getElementById(elementId);
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            input.value = text.substring(0, start) + symbol + text.substring(end);
+            input.focus();
+            input.selectionStart = input.selectionEnd = start + symbol.length;
+        }
+
+        function saveProblem(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-problem-id').value;
+            const category = document.getElementById('input-category').value.trim();
+            const statement = document.getElementById('input-statement').value.trim();
+            const answer = document.getElementById('input-answer').value.trim();
+            const explanation = document.getElementById('input-explanation').value.trim();
+
+            if (editId) {
+                // Update existing
+                const idx = problems.findIndex(p => p.id === editId);
+                if (idx !== -1) {
+                    problems[idx] = { id: editId, category, statement, answer, explanation };
+                }
+            } else {
+                // Add new problem
+                const newProblem = {
+                    id: Date.now().toString(),
+                    category,
+                    statement,
+                    answer,
+                    explanation
+                };
+                problems.push(newProblem);
+            }
+
+            saveToLocalStorage();
+            resetForm();
+            renderProblemsList();
+            renderPracticeProblem();
+        }
+
+        function editProblem(id) {
+            const problem = problems.find(p => p.id === id);
+            if (!problem) return;
+
+            document.getElementById('edit-problem-id').value = problem.id;
+            document.getElementById('input-category').value = problem.category;
+            document.getElementById('input-statement').value = problem.statement;
+            document.getElementById('input-answer').value = problem.answer;
+            document.getElementById('input-explanation').value = problem.explanation;
+
+            document.getElementById('form-title').innerText = "問題の編集";
+            document.getElementById('btn-save').innerText = "変更内容を更新する";
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('problem-form').reset();
+            document.getElementById('edit-problem-id').value = '';
+            document.getElementById('form-title').innerText = "新しい問題の追加";
+            document.getElementById('btn-save').innerText = "問題を登録保存する";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        function deleteProblem(id) {
+            if (confirm('この問題を削除してもよろしいですか？')) {
+                problems = problems.filter(p => p.id !== id);
+                saveToLocalStorage();
+                renderProblemsList();
+                renderPracticeProblem();
+            }
+        }
+
+        function initCanvas() {
+            canvas = document.getElementById('board-canvas');
+            ctx = canvas.getContext('2d');
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // Mouse Events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            // Touch Events for Mobile
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        function setPenColor(color) {
+            isEraser = false;
+            currentColor = color;
+            document.getElementById('btn-eraser').classList.remove('bg-blue-100', 'text-blue-700');
+        }
+
+        function toggleEraser() {
+            isEraser = !isEraser;
+            const eraserBtn = document.getElementById('btn-eraser');
+            if (isEraser) {
+                eraserBtn.classList.add('bg-blue-100', 'text-blue-700');
+            } else {
+                eraserBtn.classList.remove('bg-blue-100', 'text-blue-700');
+            }
+        }
+
+        function clearCanvas() {
+            if (ctx && canvas) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const coords = getCanvasCoords(e);
+            ctx.beginPath();
+            ctx.moveTo(coords.x, coords.y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const coords = getCanvasCoords(e);
+
+            ctx.lineWidth = isEraser ? 20 : 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            if (isEraser) {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = currentColor;
+            }
+
+            ctx.lineTo(coords.x, coords.y);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function handleTouchStart(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                startDrawing(touch);
+            }
+        }
+
+        function handleTouchMove(e) {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                draw(touch);
+            }
+        }
+    </script>
+</body>
+</html>
