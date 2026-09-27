@@ -251,8 +251,15 @@
         }
 
         function loadWebhookUrl() {
-            const savedUrl = localStorage.getItem("math_app_webhook_url") || "";
-            document.getElementById("webhook-url").value = savedUrl;
+            const savedUrl = localStorage.getItem("math_app_webhook_url");
+            // 保存されたURLがなければ、GASのURLを初期値としてセット
+            const defaultUrl = "ここにコピーしたGASのWebアプリURLを貼り付け";
+
+            const targetUrl = savedUrl || defaultUrl;
+            document.getElementById("webhook-url").value = targetUrl;
+            if (!savedUrl) {
+                localStorage.setItem("math_app_webhook_url", defaultUrl);
+            }
         }
 
         function switchTab(tabId) {
