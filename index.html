@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数学問題演習アプリ</title>
+    <title>数学問題演習（先生通知機能付き）</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- MathJax for rendering math equations -->
@@ -20,7 +20,6 @@
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        /* Custom styles for canvas and touch interactions */
         body {
             user-select: none;
             -webkit-user-select: none;
@@ -47,7 +46,7 @@
                 <div class="bg-blue-600 text-white p-2 rounded-lg font-bold text-lg">
                     $\sum$
                 </div>
-                <h1 class="text-xl font-bold text-slate-800">数学演習 </h1>
+                <h1 class="text-xl font-bold text-slate-800">数学演習</h1>
             </div>
             <span class="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-medium" id="header-stats">問題数: 0</span>
         </div>
@@ -55,7 +54,7 @@
 
     <main class="max-w-3xl mx-auto w-full px-4 py-6 flex-grow">
 
-        <!-- TAB 1: PRACTICE SECTION -->
+        <!-- TAB 1: PRACTICE SECTION (生徒回答画面) -->
         <section id="tab-practice" class="tab-content block space-y-6">
             <!-- Progress Bar Card -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -68,8 +67,17 @@
                 </div>
             </div>
 
-<!-- Question Card -->
+            <!-- Question Card -->
             <div id="practice-card" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <!-- 生徒名入力欄 -->
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 flex items-center gap-3">
+                    <i class="fa-solid fa-user-pen text-blue-600 text-lg"></i>
+                    <div class="flex-grow">
+                        <label class="block text-xs font-bold text-blue-800">生徒名・学年番号（提出時に先生に通知されます）</label>
+                        <input type="text" id="student-name" placeholder="例: 山田太郎 (2年A組10番)" class="w-full mt-1 px-3 py-1.5 bg-white rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
                 <div class="flex items-center justify-between border-b pb-3 border-slate-100">
                     <span id="problem-category" class="bg-indigo-50 text-indigo-600 text-xs px-3 py-1 rounded-md font-semibold">カテゴリ</span>
                     <span id="practice-progress-text" class="text-xs text-slate-500 font-medium">問題 1 / 1</span>
@@ -98,9 +106,6 @@
                         <button type="button" onclick="insertAnswerSymbol('^2')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-700 font-mono">x²</button>
                         <button type="button" onclick="insertAnswerSymbol('^3')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-700 font-mono">x³</button>
                         <button type="button" onclick="insertAnswerSymbol('\\frac{a}{b}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-700 font-mono">½</button>
-                        <button type="button" onclick="insertAnswerSymbol('a_{n}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-700 font-mono">$a_n$</button>
-                        <button type="button" onclick="insertAnswerSymbol('\\sin x')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-700 font-mono">$\sin x$</button>
-                        <button type="button" onclick="insertAnswerSymbol('\\cos x')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-700 font-mono">$\cos x$</button>
                     </div>
 
                     <div class="flex gap-2">
@@ -111,7 +116,7 @@
                     <div id="user-answer-preview" class="hidden p-3 bg-slate-50 border-l-4 border-blue-500 rounded-r-xl text-slate-800 text-lg min-h-[50px]"></div>
                 </div>
 
-                <!-- ナビゲーション・一括採点ボタン -->
+                <!-- ナビゲーション・提出ボタン -->
                 <div class="flex justify-between items-center pt-4 border-t border-slate-100">
                     <button id="btn-prev" onclick="prevProblem()" class="px-4 py-2.5 bg-white border border-slate-300 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition flex items-center gap-2 shadow-sm text-sm">
                         <i class="fa-solid fa-chevron-left text-xs"></i> 前の問題
@@ -119,31 +124,97 @@
                     <button id="btn-next" onclick="nextProblem()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm text-sm">
                         次の問題 <i class="fa-solid fa-chevron-right text-xs"></i>
                     </button>
-                    <button id="btn-submit-all" onclick="submitAllAnswers()" class="hidden px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm text-sm">
-                        まとめて採点する
+                    <button id="btn-submit-all" onclick="submitToGrading()" class="hidden px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm text-sm flex items-center gap-2">
+                        <i class="fa-paper-plane fa-regular"></i> 解答を提出する
                     </button>
                 </div>
             </div>
 
-            <!-- 採点結果画面（初期表示は非表示） -->
-            <div id="results-card" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-                <div class="text-center space-y-2 pb-4 border-b border-slate-100">
-                    <h2 class="text-2xl font-bold text-slate-800">採点結果</h2>
-                    <div id="score-text" class="text-3xl font-extrabold text-blue-600"></div>
+            <!-- 提出完了画面 -->
+            <div id="submitted-card" class="hidden bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center space-y-4">
+                <div class="text-5xl text-emerald-500 mb-2">
+                    <i class="fa-solid fa-circle-check"></i>
                 </div>
-
-                <!-- 全問題の正誤・解答・解説リスト -->
-                <div id="results-list" class="space-y-6"></div>
-
-                <button onclick="resetPractice()" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm">
-                    もう一度挑戦する
+                <h2 class="text-2xl font-bold text-slate-800">解答を提出しました</h2>
+                <p id="submission-status-msg" class="text-slate-600 text-sm">先生へ通知が送信されました。「採点」タブから確認・採点を行えます。</p>
+                <button onclick="resetPractice()" class="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm">
+                    もう一度最初から解く
                 </button>
             </div>
         </section>
 
-        <!-- TAB 2: MANAGEMENT SECTION -->
+        <!-- TAB 2: GRADING SECTION (先生用採点画面) -->
+        <section id="tab-grading" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4 border-slate-100">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">先生用採点画面</h2>
+                        <p class="text-xs text-slate-500" id="grading-student-label">生徒: 未提出</p>
+                    </div>
+                    <div id="grading-score" class="text-lg font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
+                        得点: - / -
+                    </div>
+                </div>
+
+                <div id="grading-list" class="space-y-6">
+                    <!-- 解答一覧がここに動的に追加されます -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: MANAGEMENT SECTION & NOTIFICATION SETTINGS -->
         <section id="tab-manage" class="tab-content hidden space-y-6">
-            <!-- Add / Edit Problem Form -->
+            <!-- 通知設定カード -->
+            <div class="bg-amber-50 p-6 rounded-2xl shadow-sm border border-amber-200 space-y-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-amber-600 text-xl"></i>
+                    <h2 class="text-lg font-bold text-slate-800">先生宛ての通知設定 (GAS / Webhook)</h2>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    生徒が「提出する」を押した際に、通知を送るための Google Apps Script (GAS) や Webhook のエンドポイントURLを設定します。
+                </p>
+
+                <div class="space-y-3 bg-white p-4 rounded-xl border border-amber-200">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">通知用 Webhook / GAS アプリ URL</label>
+                        <input type="url" id="webhook-url" placeholder="https://script.google.com/macros/s/..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div class="flex justify-between items-center pt-1">
+                        <button onclick="saveNotificationSettings()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs transition">
+                            設定を保存
+                        </button>
+                        <button onclick="testNotification()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition">
+                            <i class="fa-solid fa-paper-plane"></i> テスト送信
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 簡易セットアップガイド -->
+                <details class="text-xs text-slate-600 bg-white/80 p-3 rounded-lg border border-amber-100">
+                    <summary class="font-bold cursor-pointer text-amber-800">💡 簡単にメールやLINE通知を受け取る方法 (GASコード例)</summary>
+                    <div class="mt-2 space-y-2 font-mono text-[11px] bg-slate-800 text-slate-100 p-3 rounded overflow-x-auto">
+                        <p class="font-sans text-amber-300">Google Apps Script (GAS) に貼り付けて「ウェブアプリ」としてデプロイしてください：</p>
+                        <pre>function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var student = data.student || "名前なし";
+  var answers = data.answers || [];
+  
+  var body = "【数学演習 提出通知】\n生徒: " + student + "\n\n";
+  answers.forEach(function(item, idx) {
+    body += "問" + (idx+1) + ": " + item.answer + "\n";
+  });
+  
+  // メールで通知を受け取る場合
+  MailApp.sendEmail("your-email@gmail.com", "数学演習提出: " + student, body);
+  
+  return ContentService.createTextOutput(JSON.stringify({status: "ok"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+                    </div>
+                </details>
+            </div>
+
+            <!-- 問題登録フォーム -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
                 <div class="flex justify-between items-center">
                     <h2 id="form-title" class="text-lg font-bold text-slate-800">新しい問題の追加</h2>
@@ -158,13 +229,11 @@
                         <input type="text" id="input-category" required placeholder="例: 微分・積分、二次関数" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                     </div>
 
-                    <!-- Problem Statement Input with Math Shortcuts -->
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="block text-xs font-semibold text-slate-600">問題文 (TeX数式は $ で囲む)</label>
                         </div>
                         
-                        <!-- Math Symbol Helper Toolbar -->
                         <div class="flex flex-wrap gap-1 p-2 bg-slate-50 border border-slate-200 rounded-t-lg text-sm">
                             <span class="text-xs text-slate-400 self-center mr-1">数式記号:</span>
                             <button type="button" onclick="insertSymbol('input-statement', '$\\int_{a}^{b} f(x)dx$')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\int$</button>
@@ -179,16 +248,14 @@
                             <button type="button" onclick="insertSymbol('input-statement', '\\frac{a}{b}')" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 text-xs font-mono">$\frac{a}{b}$</button>
                         </div>
 
-                        <textarea id="input-statement" required rows="3" placeholder="問題文を入力してください。例: $\int_{0}^{1} 2x \, dx$ の値を求めよ。" class="w-full px-3 py-2 rounded-b-lg border border-slate-300 border-t-0 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"></textarea>
+                        <textarea id="input-statement" required rows="3" placeholder="問題文を入力してください。" class="w-full px-3 py-2 rounded-b-lg border border-slate-300 border-t-0 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"></textarea>
                     </div>
 
-                    <!-- Answer Input -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">正解 (半角推奨)</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">正解・模範解答</label>
                         <input type="text" id="input-answer" required placeholder="例: 1" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                     </div>
 
-                    <!-- Explanation Input -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">解説</label>
                         <textarea id="input-explanation" required rows="3" placeholder="解法の手順やポイントを入力してください。" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"></textarea>
@@ -200,16 +267,13 @@
                 </form>
             </div>
 
-            <!-- Existing Problems List -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
                 <h2 class="text-lg font-bold text-slate-800">問題一覧</h2>
-                <div id="problems-list" class="divide-y divide-slate-100">
-                    <!-- Dynamic problem items go here -->
-                </div>
+                <div id="problems-list" class="divide-y divide-slate-100"></div>
             </div>
         </section>
 
-        <!-- TAB 3: BOARD / CANVAS MEMO SECTION -->
+        <!-- TAB 4: BOARD / CANVAS MEMO SECTION -->
         <section id="tab-board" class="tab-content hidden space-y-4">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3 border-slate-100">
@@ -217,21 +281,17 @@
                         <i class="fa-solid fa-pen-ruler text-blue-600"></i> 計算用紙・板書メモ
                     </h2>
                     
-                    <!-- Canvas Controls -->
                     <div class="flex items-center gap-2">
-                        <!-- Color Selector -->
                         <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                             <button onclick="setPenColor('#1e293b')" class="w-6 h-6 rounded-full bg-slate-800 border-2 border-white focus:ring-2 focus:ring-blue-400" title="黒"></button>
                             <button onclick="setPenColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border-2 border-white focus:ring-2 focus:ring-blue-400" title="赤"></button>
                             <button onclick="setPenColor('#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white focus:ring-2 focus:ring-blue-400" title="青"></button>
                         </div>
                         
-                        <!-- Tool Mode Toggle -->
                         <button id="btn-eraser" onclick="toggleEraser()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition">
                             <i class="fa-solid fa-eraser"></i> 消しゴム
                         </button>
 
-                        <!-- Clear Canvas Button -->
                         <button onclick="clearCanvas()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition">
                             <i class="fa-solid fa-trash-can"></i> 全消去
                         </button>
@@ -252,8 +312,11 @@
             <button onclick="switchTab('tab-practice')" id="nav-tab-practice" class="tab-btn active flex-1 py-3 flex flex-col items-center gap-1 text-slate-500 text-xs font-semibold transition">
                 <i class="fa-solid fa-graduation-cap text-base"></i> 問題演習
             </button>
+            <button onclick="switchTab('tab-grading')" id="nav-tab-grading" class="tab-btn flex-1 py-3 flex flex-col items-center gap-1 text-slate-500 text-xs font-semibold transition">
+                <i class="fa-solid fa-check-double text-base"></i> 採点
+            </button>
             <button onclick="switchTab('tab-manage')" id="nav-tab-manage" class="tab-btn flex-1 py-3 flex flex-col items-center gap-1 text-slate-500 text-xs font-semibold transition">
-                <i class="fa-solid fa-list-check text-base"></i> 問題管理
+                <i class="fa-solid fa-list-check text-base"></i> 管理・設定
             </button>
             <button onclick="switchTab('tab-board')" id="nav-tab-board" class="tab-btn flex-1 py-3 flex flex-col items-center gap-1 text-slate-500 text-xs font-semibold transition">
                 <i class="fa-solid fa-pen-to-square text-base"></i> 計算用紙
@@ -263,7 +326,6 @@
 
     <!-- JavaScript Logic -->
     <script>
-        // デフォルト問題データ
         const defaultProblems = [
             {
                 id: 1,
@@ -281,20 +343,20 @@
             }
         ];
 
-        // アプリケーション状態変数
         let problems = [];
         let currentProblemIndex = 0;
-        let userAnswers = {}; // 各問題に対するユーザーの入力を保持
+        let userAnswers = {}; 
+        let manualGrades = {}; 
+        let studentName = "";
 
-        // 初期化処理
         document.addEventListener("DOMContentLoaded", () => {
             loadProblems();
+            loadNotificationSettings();
             renderPracticeProblem();
             renderProblemsList();
             initCanvas();
         });
 
-        // LocalStorage から問題データを取得（無ければデフォルト）
         function loadProblems() {
             const saved = localStorage.getItem("math_app_problems");
             if (saved) {
@@ -315,11 +377,21 @@
             updateHeaderStats();
         }
 
+        function loadNotificationSettings() {
+            const url = localStorage.getItem("math_app_webhook_url") || "";
+            document.getElementById("webhook-url").value = url;
+        }
+
+        function saveNotificationSettings() {
+            const url = document.getElementById("webhook-url").value.trim();
+            localStorage.setItem("math_app_webhook_url", url);
+            alert("通知設定を保存しました。");
+        }
+
         function updateHeaderStats() {
             document.getElementById("header-stats").textContent = `問題数: ${problems.length}`;
         }
 
-        // --- タブ切り替え ---
         function switchTab(tabId) {
             document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
             document.getElementById(tabId).classList.remove("hidden");
@@ -327,12 +399,14 @@
             document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
             document.getElementById("nav-" + tabId).classList.add("active");
 
-            if (tabId === 'tab-board') {
+            if (tabId === 'tab-grading') {
+                renderGradingView();
+            } else if (tabId === 'tab-board') {
                 resizeCanvas();
             }
         }
 
-        // --- 問題演習ロジック ---
+        // --- 演習画面 ---
         function renderPracticeProblem() {
             if (problems.length === 0) {
                 document.getElementById('problem-statement').innerHTML = "問題が登録されていません。「問題管理」から追加してください。";
@@ -351,12 +425,10 @@
 
             document.getElementById('problem-statement').innerHTML = problem.statement;
 
-            // 入力欄の復元
             const currentInput = userAnswers[currentProblemIndex] || '';
             const answerInput = document.getElementById('user-answer');
             if (answerInput) answerInput.value = currentInput;
 
-            // ボタン制御
             const prevBtn = document.getElementById('btn-prev');
             if (prevBtn) {
                 prevBtn.disabled = (currentProblemIndex === 0);
@@ -420,94 +492,151 @@
             }
         }
 
-// --- 数式表記の揺れを吸収して標準化する関数 ---
-        function normalizeMathExpression(expr) {
-            if (!expr) return "";
-
-            let str = String(expr).trim();
-
-            // 1. TeXの数式囲み記号（$, \(,\) など）や全角スペース・半角スペースを削除
-            str = str.replace(/[\$\\(\\\)]/g, "");
-            str = str.replace(/[\s\u3000]/g, "");
-
-            // 2. 全角英数字・記号を半角に変換
-            str = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
-                return String.fromCharCode(s.charCodeAt(0) - 0xfee0);
-            });
-            str = str.replace(/＋/g, "+").replace(/－/g, "-").replace(/＝/g, "=")
-                     .replace(/／/g, "/").replace(/＊/g, "*");
-
-            // 3. LaTeX表記の表記ブレを統一化
-            // 冪乗のカッコ省略: x^{2} -> x^2
-            str = str.replace(/\^{?([0-9a-zA-Z])}?/g, "^$1");
-            // 添字のカッコ省略: a_{n} -> a_n
-            str = str.replace(/_{?([0-9a-zA-Z])}?/g, "_$1");
-            // 分数表記: \frac{a}{b} -> a/b (単純な分数)
-            str = str.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "($1)/($2)");
-            // 不要な波カッコ {} の除去
-            str = str.replace(/[\{\}]/g, "");
-
-            // 4. 定数やよく使う記号の表記統一
-            str = str.replace(/\\pi/g, "π");
-            str = str.replace(/\\theta/g, "θ");
-            str = str.replace(/\\infty/g, "∞");
-            str = str.replace(/\\sqrt/g, "√");
-
-            return str.toLowerCase();
-        }
-
-        // --- まとめ採点機能（修正版） ---
-        function submitAllAnswers() {
-            let score = 0;
-            const resultsList = document.getElementById('results-list');
-            resultsList.innerHTML = '';
-
-            problems.forEach((p, idx) => {
-                const rawUserAns = (userAnswers[idx] || '').trim();
-                const rawCorrectAns = (p.answer || '').trim();
-
-                // 表示上の標準化を行って比較
-                const normUser = normalizeMathExpression(rawUserAns);
-                const normCorrect = normalizeMathExpression(rawCorrectAns);
-
-                // 完全一致または標準化後の表記一致で正解とみなす
-                const isCorrect = (normUser !== "" && normUser === normCorrect);
-                if (isCorrect) score++;
-
-                const resultItem = document.createElement('div');
-                resultItem.className = `p-4 rounded-xl border ${isCorrect ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'} space-y-2`;
-                resultItem.innerHTML = `
-                    <div class="flex items-center justify-between font-bold">
-                        <span class="${isCorrect ? 'text-emerald-700' : 'text-rose-700'}">問${idx + 1}: ${isCorrect ? '正解 🎉' : '不正解 ❌'}</span>
-                        <span class="text-xs text-slate-500">${p.category}</span>
-                    </div>
-                    <div class="text-slate-800">${p.statement}</div>
-                    <div class="text-sm text-slate-600">あなたの解答: <span class="font-semibold">${rawUserAns ? '\\(' + rawUserAns + '\\)' : '未入力'}</span></div>
-                    <div class="text-sm text-slate-600">正解: <span class="font-semibold">\\(${rawCorrectAns}\\)</span></div>
-                    <div class="text-sm bg-white p-3 rounded-lg border border-slate-200 text-slate-700 mt-2"><strong>解説:</strong> ${p.explanation}</div>
-                `;
-                resultsList.appendChild(resultItem);
-            });
-
-            document.getElementById('score-text').textContent = `${problems.length}問中 ${score}問 正解！`;
+        // --- 通知送信処理 (GAS / Webhook 連携) ---
+        async function submitToGrading() {
+            studentName = document.getElementById("student-name").value.trim() || "匿名生徒";
 
             document.getElementById('practice-card').classList.add('hidden');
-            document.getElementById('results-card').classList.remove('hidden');
+            document.getElementById('submitted-card').classList.remove('hidden');
 
-            if (window.MathJax) {
-                MathJax.typesetPromise([resultsList]);
+            const webhookUrl = localStorage.getItem("math_app_webhook_url");
+            const statusMsg = document.getElementById("submission-status-msg");
+
+            if (webhookUrl) {
+                statusMsg.textContent = "先生に解答通知を送信中...";
+                try {
+                    const payload = {
+                        student: studentName,
+                        timestamp: new Date().toLocaleString("ja-JP"),
+                        answers: problems.map((p, idx) => ({
+                            problemNo: idx + 1,
+                            category: p.category,
+                            answer: userAnswers[idx] || "未入力"
+                        }))
+                    };
+
+                    await fetch(webhookUrl, {
+                        method: "POST",
+                        mode: "no-cors", // GAS対応のno-corsモード
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+
+                    statusMsg.textContent = "解答が完了し、先生へ提出通知が送信されました！";
+                } catch (err) {
+                    console.error("Notification Error:", err);
+                    statusMsg.textContent = "解答は記録されましたが、通知送信に失敗しました。";
+                }
+            } else {
+                statusMsg.textContent = "解答を提出しました。「採点」タブから先生が採点できます。（※通知URL未設定）";
+            }
+        }
+
+        async function testNotification() {
+            const webhookUrl = document.getElementById("webhook-url").value.trim();
+            if (!webhookUrl) {
+                alert("Webhook / GAS URL が入力されていません。");
+                return;
+            }
+
+            try {
+                await fetch(webhookUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        student: "テスト送信",
+                        timestamp: new Date().toLocaleString("ja-JP"),
+                        answers: [{ problemNo: 1, category: "テスト", answer: "テスト回答" }]
+                    })
+                });
+                alert("テスト通知リクエストを送信しました！受信を確認してください。");
+            } catch (err) {
+                alert("送信エラーが発生しました: " + err.message);
             }
         }
 
         function resetPractice() {
             userAnswers = {};
+            manualGrades = {};
             currentProblemIndex = 0;
-            document.getElementById('results-card').classList.add('hidden');
+            document.getElementById('submitted-card').classList.add('hidden');
             document.getElementById('practice-card').classList.remove('hidden');
             renderPracticeProblem();
         }
 
-// --- 問題管理機能（修正版） ---
+        // --- 先生用手動採点機能 ---
+        function renderGradingView() {
+            const listEl = document.getElementById('grading-list');
+            listEl.innerHTML = '';
+
+            document.getElementById('grading-student-label').textContent = `生徒: ${studentName || "未提出"}`;
+
+            let correctCount = 0;
+
+            if (problems.length === 0) {
+                listEl.innerHTML = '<p class="text-slate-400 text-center py-6">問題がありません。</p>';
+                document.getElementById('grading-score').textContent = "得点: - / -";
+                return;
+            }
+
+            problems.forEach((p, idx) => {
+                const userAns = (userAnswers[idx] || '').trim();
+                const gradeStatus = manualGrades[idx]; 
+
+                if (gradeStatus === true) correctCount++;
+
+                let cardStyle = 'bg-white border-slate-200';
+                if (gradeStatus === true) cardStyle = 'bg-emerald-50 border-emerald-200';
+                else if (gradeStatus === false) cardStyle = 'bg-rose-50 border-rose-200';
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border ${cardStyle} space-y-3 transition-colors duration-200`;
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-sm text-slate-700">問 ${idx + 1} [${p.category}]</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500 font-semibold mr-1">採点:</span>
+                            <button onclick="setManualGrade(${idx}, true)" class="px-3 py-1 rounded-lg text-sm font-bold ${gradeStatus === true ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100'}">
+                                ◯ 正解
+                            </button>
+                            <button onclick="setManualGrade(${idx}, false)" class="px-3 py-1 rounded-lg text-sm font-bold ${gradeStatus === false ? 'bg-rose-600 text-white shadow-sm' : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100'}">
+                                ✕ 不正解
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-slate-800 text-base font-medium">${p.statement}</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm pt-2 border-t border-slate-200/60">
+                        <div class="bg-white/80 p-2.5 rounded-lg border border-slate-200">
+                            <span class="text-xs text-slate-400 block font-semibold">生徒の解答</span>
+                            <span class="font-semibold text-slate-800">${userAns ? '\\(' + userAns + '\\)' : '<span class="text-rose-400 italic">未入力</span>'}</span>
+                        </div>
+                        <div class="bg-white/80 p-2.5 rounded-lg border border-slate-200">
+                            <span class="text-xs text-slate-400 block font-semibold">模範解答</span>
+                            <span class="font-semibold text-slate-800">\\(${p.answer}\\)</span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-600 bg-white/60 p-2.5 rounded-lg border border-slate-200">
+                        <strong>解説:</strong> ${p.explanation}
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+
+            document.getElementById('grading-score').textContent = `得点: ${correctCount} / ${problems.length} 問正解`;
+
+            if (window.MathJax) {
+                MathJax.typesetPromise([listEl]);
+            }
+        }
+
+        function setManualGrade(index, isCorrect) {
+            manualGrades[index] = isCorrect;
+            renderGradingView();
+        }
+
+        // --- 問題管理機能 ---
         function insertSymbol(targetId, symbol) {
             const textarea = document.getElementById(targetId);
             if (!textarea) return;
@@ -529,13 +658,11 @@
             const explanation = document.getElementById('input-explanation').value;
 
             if (editId !== "") {
-                // 編集時の処理
                 const index = problems.findIndex(p => String(p.id) === String(editId));
                 if (index !== -1) {
                     problems[index] = { id: Number(editId), category, statement, answer, explanation };
                 }
             } else {
-                // 新規追加時の処理
                 const newId = problems.length > 0 ? Math.max(...problems.map(p => Number(p.id) || 0)) + 1 : 1;
                 problems.push({ id: newId, category, statement, answer, explanation });
             }
@@ -548,7 +675,6 @@
         }
 
         function editProblem(id) {
-            // 文字列・数値のどちらでも一致するように比較
             const problem = problems.find(p => String(p.id) === String(id));
             if (!problem) return;
 
@@ -562,7 +688,6 @@
             document.getElementById('btn-save').textContent = "更新内容を保存する";
             document.getElementById('btn-cancel-edit').classList.remove('hidden');
 
-            // フォームのある上部へスムーズスクロール
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -599,8 +724,6 @@
             problems.forEach((p, idx) => {
                 const item = document.createElement('div');
                 item.className = 'py-4 flex justify-between items-start gap-4';
-                
-                // HTML生成時にIDを安全に渡すように修正
                 item.innerHTML = `
                     <div class="space-y-1 flex-grow">
                         <div class="flex items-center gap-2 mb-1">
@@ -622,7 +745,7 @@
             }
         }
 
-        // --- キャンバス（手書きメモ）機能 ---
+        // --- キャンバス機能 ---
         let canvas, ctx;
         let isDrawing = false;
         let isEraser = false;
@@ -633,7 +756,6 @@
             ctx = canvas.getContext('2d');
             resizeCanvas();
 
-            // イベントリスナー設定
             canvas.addEventListener('mousedown', startDrawing);
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', stopDrawing);
