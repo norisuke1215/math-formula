@@ -420,15 +420,58 @@
             }
         }
 
-        // --- まとめ採点機能 ---
+// --- 数式表記の揺れを吸収して標準化する関数 ---
+        function normalizeMathExpression(expr) {
+            if (!expr) return "";
+
+            let str = String(expr).trim();
+
+            // 1. TeXの数式囲み記号（$, \(,\) など）や全角スペース・半角スペースを削除
+            str = str.replace(/[\$\\(\\\)]/g, "");
+            str = str.replace(/[\s\u3000]/g, "");
+
+            // 2. 全角英数字・記号を半角に変換
+            str = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xfee0);
+            });
+            str = str.replace(/＋/g, "+").replace(/－/g, "-").replace(/＝/g, "=")
+                     .replace(/／/g, "/").replace(/＊/g, "*");
+
+            // 3. LaTeX表記の表記ブレを統一化
+            // 冪乗のカッコ省略: x^{2} -> x^2
+            str = str.replace(/\^{?([0-9a-zA-Z])}?/g, "^$1");
+            // 添字のカッコ省略: a_{n} -> a_n
+            str = str.replace(/_{?([0-9a-zA-Z])}?/g, "_$1");
+            // 分数表記: \frac{a}{b} -> a/b (単純な分数)
+            str = str.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "($1)/($2)");
+            // 不要な波カッコ {} の除去
+            str = str.replace(/[\{\}]/g, "");
+
+            // 4. 定数やよく使う記号の表記統一
+            str = str.replace(/\\pi/g, "π");
+            str = str.replace(/\\theta/g, "θ");
+            str = str.replace(/\\infty/g, "∞");
+            str = str.replace(/\\sqrt/g, "√");
+
+            return str.toLowerCase();
+        }
+
+        // --- まとめ採点機能（修正版） ---
         function submitAllAnswers() {
             let score = 0;
             const resultsList = document.getElementById('results-list');
             resultsList.innerHTML = '';
 
             problems.forEach((p, idx) => {
-                const userAns = (userAnswers[idx] || '').trim();
-                const isCorrect = (userAns === p.answer.trim());
+                const rawUserAns = (userAnswers[idx] || '').trim();
+                const rawCorrectAns = (p.answer || '').trim();
+
+                // 表示上の標準化を行って比較
+                const normUser = normalizeMathExpression(rawUserAns);
+                const normCorrect = normalizeMathExpression(rawCorrectAns);
+
+                // 完全一致または標準化後の表記一致で正解とみなす
+                const isCorrect = (normUser !== "" && normUser === normCorrect);
                 if (isCorrect) score++;
 
                 const resultItem = document.createElement('div');
@@ -439,8 +482,8 @@
                         <span class="text-xs text-slate-500">${p.category}</span>
                     </div>
                     <div class="text-slate-800">${p.statement}</div>
-                    <div class="text-sm text-slate-600">あなたの解答: <span class="font-semibold">${userAns ? '\\(' + userAns + '\\)' : '未入力'}</span></div>
-                    <div class="text-sm text-slate-600">正解: <span class="font-semibold">\\(${p.answer}\\)</span></div>
+                    <div class="text-sm text-slate-600">あなたの解答: <span class="font-semibold">${rawUserAns ? '\\(' + rawUserAns + '\\)' : '未入力'}</span></div>
+                    <div class="text-sm text-slate-600">正解: <span class="font-semibold">\\(${rawCorrectAns}\\)</span></div>
                     <div class="text-sm bg-white p-3 rounded-lg border border-slate-200 text-slate-700 mt-2"><strong>解説:</strong> ${p.explanation}</div>
                 `;
                 resultsList.appendChild(resultItem);
