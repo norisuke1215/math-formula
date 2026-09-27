@@ -462,9 +462,10 @@
             renderPracticeProblem();
         }
 
-        // --- 問題管理機能 ---
+// --- 問題管理機能（修正版） ---
         function insertSymbol(targetId, symbol) {
             const textarea = document.getElementById(targetId);
+            if (!textarea) return;
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
             const text = textarea.value;
@@ -482,13 +483,15 @@
             const answer = document.getElementById('input-answer').value;
             const explanation = document.getElementById('input-explanation').value;
 
-            if (editId) {
-                const index = problems.findIndex(p => p.id == editId);
+            if (editId !== "") {
+                // 編集時の処理
+                const index = problems.findIndex(p => String(p.id) === String(editId));
                 if (index !== -1) {
                     problems[index] = { id: Number(editId), category, statement, answer, explanation };
                 }
             } else {
-                const newId = problems.length > 0 ? Math.max(...problems.map(p => p.id)) + 1 : 1;
+                // 新規追加時の処理
+                const newId = problems.length > 0 ? Math.max(...problems.map(p => Number(p.id) || 0)) + 1 : 1;
                 problems.push({ id: newId, category, statement, answer, explanation });
             }
 
@@ -496,29 +499,31 @@
             resetForm();
             renderProblemsList();
             renderPracticeProblem();
-            alert(editId ? "問題を更新しました。" : "新しい問題を登録しました。");
+            alert(editId !== "" ? "問題を更新しました。" : "新しい問題を登録しました。");
         }
 
         function editProblem(id) {
-            const problem = problems.find(p => p.id === id);
+            // 文字列・数値のどちらでも一致するように比較
+            const problem = problems.find(p => String(p.id) === String(id));
             if (!problem) return;
 
             document.getElementById('edit-problem-id').value = problem.id;
-            document.getElementById('input-category').value = problem.category;
-            document.getElementById('input-statement').value = problem.statement;
-            document.getElementById('input-answer').value = problem.answer;
-            document.getElementById('input-explanation').value = problem.explanation;
+            document.getElementById('input-category').value = problem.category || '';
+            document.getElementById('input-statement').value = problem.statement || '';
+            document.getElementById('input-answer').value = problem.answer || '';
+            document.getElementById('input-explanation').value = problem.explanation || '';
 
             document.getElementById('form-title').textContent = "問題を編集";
             document.getElementById('btn-save').textContent = "更新内容を保存する";
             document.getElementById('btn-cancel-edit').classList.remove('hidden');
 
+            // フォームのある上部へスムーズスクロール
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function deleteProblem(id) {
             if (confirm("この問題を削除してもよろしいですか？")) {
-                problems = problems.filter(p => p.id !== id);
+                problems = problems.filter(p => String(p.id) !== String(id));
                 saveProblemsToStorage();
                 renderProblemsList();
                 if (currentProblemIndex >= problems.length) {
@@ -538,6 +543,7 @@
 
         function renderProblemsList() {
             const listEl = document.getElementById('problems-list');
+            if (!listEl) return;
             listEl.innerHTML = '';
 
             if (problems.length === 0) {
@@ -548,17 +554,19 @@
             problems.forEach((p, idx) => {
                 const item = document.createElement('div');
                 item.className = 'py-4 flex justify-between items-start gap-4';
+                
+                // HTML生成時にIDを安全に渡すように修正
                 item.innerHTML = `
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
+                    <div class="space-y-1 flex-grow">
+                        <div class="flex items-center gap-2 mb-1">
                             <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold">問 ${idx + 1}</span>
                             <span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-semibold">${p.category}</span>
                         </div>
                         <div class="text-sm text-slate-800 font-medium">${p.statement}</div>
                     </div>
                     <div class="flex gap-2 shrink-0">
-                        <button onclick="editProblem(${p.id})" class="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded border border-blue-200">編集</button>
-                        <button onclick="deleteProblem(${p.id})" class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded border border-rose-200">削除</button>
+                        <button type="button" onclick="editProblem('${p.id}')" class="text-xs text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded border border-blue-200 font-semibold transition">編集</button>
+                        <button type="button" onclick="deleteProblem('${p.id}')" class="text-xs text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded border border-rose-200 font-semibold transition">削除</button>
                     </div>
                 `;
                 listEl.appendChild(item);
