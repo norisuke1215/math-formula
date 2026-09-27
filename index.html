@@ -68,11 +68,11 @@
                 </div>
             </div>
 
-            <!-- Question Card -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+<!-- Question Card -->
+            <div id="practice-card" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
                 <div class="flex items-center justify-between border-b pb-3 border-slate-100">
                     <span id="problem-category" class="bg-indigo-50 text-indigo-600 text-xs px-3 py-1 rounded-md font-semibold">積分法</span>
-                    <span id="problem-id-display" class="text-xs text-slate-400">ID: #1</span>
+                    <span id="practice-progress" class="text-xs text-slate-500 font-medium">問題 1 / 1</span>
                 </div>
 
                 <div class="py-2">
@@ -82,15 +82,15 @@
                     </div>
                 </div>
 
-<!-- Answer Input Form -->
+                <!-- Answer Input Form -->
                 <div class="pt-2 border-t border-slate-100 space-y-3">
                     <label class="block text-sm font-medium text-slate-700">あなたの解答</label>
                     
-                    <!-- ① 数式入力補助ボタンを追加 -->
+                    <!-- 数式入力補助ボタン -->
                     <div class="flex flex-wrap gap-1 mb-2">
                         <button type="button" onclick="insertAnswerSymbol('\\int_{a}^{b}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">∫</button>
                         <button type="button" onclick="insertAnswerSymbol('\\sum_{k=1}^{n}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">∑</button>
-                        <button type="button" onclick="insertAnswerSymbol('{}_n \\mathrm{C}_r')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">nCr</button>
+                        <button type="button" onclick="insertAnswerSymbol('{}_n \\mathrm{C}_r')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">${}_n \mathrm{C}_r$</button>
                         <button type="button" onclick="insertAnswerSymbol('\\sqrt{}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">√</button>
                         <button type="button" onclick="insertAnswerSymbol('\\pi')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">π</button>
                         <button type="button" onclick="insertAnswerSymbol('\\theta')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">θ</button>
@@ -98,38 +98,45 @@
                         <button type="button" onclick="insertAnswerSymbol('^2')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">x²</button>
                         <button type="button" onclick="insertAnswerSymbol('^3')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">x³</button>
                         <button type="button" onclick="insertAnswerSymbol('\\frac{a}{b}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">½</button>
-                        <button type="button" onclick="insertAnswerSymbol('a_{n}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">an</button>
+                        <button type="button" onclick="insertAnswerSymbol('a_{n}')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">$a_n$</button>
+                        <button type="button" onclick="insertAnswerSymbol('\\sin x')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">$\sin x$</button>
+                        <button type="button" onclick="insertAnswerSymbol('\\cos x')" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-medium">$\cos x$</button>
                     </div>
 
                     <div class="flex gap-2">
-                        <!-- ② oninput 属性を追加 -->
-                        <input type="text" id="user-answer" placeholder="答えを入力 (例: \int_0^1 x dx)" oninput="updateAnswerPreview()" class="flex-grow px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg">
-                        <button id="btn-submit" onclick="checkAnswer()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition duration-200 shadow-sm flex items-center gap-1 shrink-0">
-                            <span>回答する</span>
-                        </button>
+                        <input type="text" id="user-answer" placeholder="答えを入力" oninput="saveAndPreviewAnswer()" class="flex-grow px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg">
                     </div>
 
-                    <!-- ③ リアルタイムプレビュー表示エリアを追加 -->
+                    <!-- リアルタイム数式プレビュー -->
                     <div id="user-answer-preview" class="hidden p-3 bg-slate-50 border-l-4 border-blue-500 rounded-r-xl text-slate-800 text-lg min-h-[50px]"></div>
                 </div>
 
-                <!-- Feedback & Explanation Box -->
-                <div id="explanation-box" class="hidden p-5 rounded-xl border transition-all duration-300 space-y-3">
-                    <div id="feedback-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold"></div>
-                    <div>
-                        <h3 class="text-xs font-bold uppercase text-slate-500 mb-1">【解説】</h3>
-                        <div id="problem-explanation" class="text-slate-700 text-base leading-relaxed"></div>
-                    </div>
+                <!-- ページ送り・まとめ採点ボタンバー -->
+                <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+                    <button id="btn-prev" onclick="prevProblem()" class="px-5 py-2.5 bg-white border border-slate-300 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-chevron-left text-xs"></i> 前の問題
+                    </button>
+                    <button id="btn-next" onclick="nextProblem()" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
+                        次の問題 <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                    <button id="btn-submit-all" onclick="submitAllAnswers()" class="hidden px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm">
+                        まとめて採点する
+                    </button>
                 </div>
             </div>
 
-            <!-- Navigation Controls -->
-            <div class="flex justify-between items-center pt-2">
-                <button onclick="prevProblem()" class="px-5 py-2.5 bg-white border border-slate-300 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
-                    <i class="fa-solid fa-chevron-left text-xs"></i> 前の問題
-                </button>
-                <button onclick="nextProblem()" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
-                    次の問題 <i class="fa-solid fa-chevron-right text-xs"></i>
+            <!-- 採点結果画面（初期状態は非表示） -->
+            <div id="results-card" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="text-center space-y-2 pb-4 border-b border-slate-100">
+                    <h2 class="text-2xl font-bold text-slate-800">採点結果</h2>
+                    <div id="score-text" class="text-3xl font-extrabold text-blue-600"></div>
+                </div>
+
+                <!-- 全問題の正誤・解答・解説リスト -->
+                <div id="results-list" class="space-y-6"></div>
+
+                <button onclick="resetPractice()" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm">
+                    もう一度挑戦する
                 </button>
             </div>
         </section>
